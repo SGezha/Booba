@@ -40,10 +40,10 @@
       androidTabsPosition="bottom"
       tabBackgroundColor="#212121"
     >
-      <TabViewItem title="Поиск">
+      <TabViewItem :title="text.search">
         <transition name="bounce" appear>
           <StackLayout class="search">
-            <Label text="Поиск тегов:" class="search-text" />
+            <Label :text="text.searchText" class="search-text" />
             <TextField v-model="tags" :hint="text.input" />
             <ListView class="tags-list" for="(tag, ind) in listTags">
               <v-template>
@@ -72,7 +72,7 @@
           </StackLayout>
         </transition>
       </TabViewItem>
-      <TabViewItem title="Настройки">
+      <TabViewItem :title="text.settings">
         <Label text="Content for Tab 2" />
       </TabViewItem>
     </TabView>

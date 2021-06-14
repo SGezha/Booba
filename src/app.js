@@ -26,6 +26,8 @@ export default {
         have: "Already have!",
         input: "Enter tags...",
         search: "Search",
+        searchText: "Tags:",
+        settings: "Settings",
         complete: {
           downloaded: "Downloaded!",
           path: "File path",
@@ -80,6 +82,8 @@ export default {
         have: "Уже скачано!",
         input: "Введите теги...",
         search: "Поиск",
+        searchText: "Теги:",
+        settings: "Настройки",
         complete: {
           downloaded: "Скачано!",
           path: "Путь к файлу",
