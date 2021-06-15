@@ -51,7 +51,6 @@
                   <Label
                     :text="tag.name + ' (' + tag.count + ')'"
                     class="search-tag"
-                    @tap="console.log('test')"
                   />
                   <Switch
                     :checked="checkTag(tag.name)"
@@ -61,7 +60,15 @@
               </v-template>
             </ListView>
             <WrapLayout>
-              <Button class="but-tag" :style="{ 'background': nsfm ? 'red' : 'white', 'color': nsfm ? 'white' : '#181818'}" text="NSFM" @tap="changeNSFM" />
+              <Button
+                class="but-tag"
+                :style="{
+                  background: nsfm ? 'red' : 'white',
+                  color: nsfm ? 'white' : '#181818',
+                }"
+                text="NSFM"
+                @tap="changeNSFM"
+              />
               <Button
                 top="500"
                 class="but-tag download"
@@ -72,8 +79,23 @@
           </StackLayout>
         </transition>
       </TabViewItem>
+
       <TabViewItem :title="text.settings">
-        <Label text="Content for Tab 2" />
+        <transition name="bounce" appear>
+          <StackLayout class="search">
+            <FlexboxLayout justifyContent="space-between">
+              <Button
+                width="100%"
+                :style="{
+                  background: hide ? '#55ab00' : 'white',
+                  color: hide ? 'white' : '#181818',
+                }"
+                :text="text.hide"
+                @tap="changeHide"
+              />
+            </FlexboxLayout>
+          </StackLayout>
+        </transition>
       </TabViewItem>
     </TabView>
 
@@ -120,6 +142,23 @@
               "
               class="desc"
             />
+            <ScrollView orientation="horizontal">
+              <WrapLayout height="70px">
+                <Label :text="text.searchText" class="desc" />
+                <Label
+                  v-for="(tag, img) in nowimg.data.tags.split(' ')"
+                  :key="img"
+                  :text="tag"
+                  @tap="changeTag(tag)"
+                  class="desc-tags"
+                  :style="{
+                    'color': tags.indexOf(tag) > -1
+                      ? '#55ab00'
+                      : 'white',
+                  }"
+                />
+              </WrapLayout>
+            </ScrollView>
             <Button class="but" :text="text.back" @tap="back" />
             <Button
               top="500"

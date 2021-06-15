@@ -28,6 +28,9 @@ export default {
         search: "Search",
         searchText: "Tags:",
         settings: "Settings",
+        hide: "Hide existing images",
+        add: "added",
+        remove: "removed",
         complete: {
           downloaded: "Downloaded!",
           path: "File path",
@@ -49,6 +52,7 @@ export default {
       tags: "",
       tagsArray: [],
       nsfm: false,
+      hide: false
     };
   },
   async created() {
@@ -84,6 +88,9 @@ export default {
         search: "Поиск",
         searchText: "Теги:",
         settings: "Настройки",
+        hide: "Скрыть скачанные изображения",
+        add: "добавлен",
+        remove: "убран",
         complete: {
           downloaded: "Скачано!",
           path: "Путь к файлу",
@@ -119,6 +126,16 @@ export default {
       });
   },
   methods: {
+    changeHide() {
+      if(this.hide) {
+        this.hide = false;
+      } else {
+        this.hide = true;
+      }
+      this.Numpage = 1;
+      this.img = [];
+      this.getImages();
+    },
     changeNSFM() {
       if (this.nsfm) {
         this.nsfm = false;
@@ -163,7 +180,6 @@ export default {
           return response.text();
         })
         .then((data) => {
-          console.log(data.split("<tag")[1]);
           let parsed = [];
           data.split("<tag").forEach((i, ind) => {
             if (ind == 0 || ind == 1) return;
@@ -213,6 +229,7 @@ export default {
                 i.split(`rating="`)[1].split('"')[0] == "q")
             )
               return;
+            if(this.hide && this.checkHave(i.split(` id="`)[1].split('"')[0])) return;
             this.img.push({
               link: i.split(`jpeg_url="`)[1].split('"')[0],
               low: i.split(`preview_url="`)[1].split('"')[0],
@@ -222,6 +239,7 @@ export default {
                 owner: i.split(`author="`)[1].split('"')[0],
                 width: i.split(` width="`)[1].split('"')[0],
                 height: i.split(` height="`)[1].split('"')[0],
+                tags: i.split(` tags="`)[1].split('"')[0],
               },
             });
           });
@@ -240,8 +258,9 @@ export default {
       if (this.show) return;
     },
     openMenu(args) {
-      if (this.list) {
+      if (!this.menu) {
         this.list = false;
+        this.show = false;
         this.menu = true;
       } else {
         this.list = true;
@@ -269,7 +288,6 @@ export default {
       }, 50);
     },
     onScroll(el) {
-      console.log('test')
       if (!this.list) return;
       this.nowScroll = el.scrollY;
       this.needScroll = this.$refs.scrollLayout.nativeView.scrollableHeight;

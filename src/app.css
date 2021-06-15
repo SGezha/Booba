@@ -17,6 +17,13 @@ ActionBar {
   width: 100%;
 }
 
+.desc-tags {
+  font-size: 15;
+  margin-left: 20px;
+  margin-right: 20px;
+  color: white;
+}
+
 .menu {
   margin-right: 20px;
 }
