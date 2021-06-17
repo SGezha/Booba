@@ -19,9 +19,16 @@ ActionBar {
 
 .desc-tags {
   font-size: 15;
-  margin-left: 20px;
-  margin-right: 20px;
   color: white;
+  background: #212121;
+  margin-right: 5px;
+  padding: 5px 20px;
+  border-radius: 10;
+}
+
+.tags-block {
+  margin-left: 20px;
+  margin-top: 10px;
 }
 
 .menu {
@@ -37,8 +44,8 @@ ActionBar {
 }
 
 .web {
-  z-index: -1;
-  height: 90%;
+  width: 100%;
+  height: 100%;
 }
 
 .but {
@@ -119,8 +126,12 @@ TextField {
 }
 
 .search-tag {
-  font-size: 18;
+  font-size: 15;
   color: white;
+  background: #212121;
+  margin: 5px;
+  padding: 5px 20px;
+  border-radius: 10;
 }
 
 .tags-list {

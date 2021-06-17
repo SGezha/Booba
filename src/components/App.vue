@@ -1,9 +1,5 @@
 <template>
-  <Page
-    @loaded="pageLoaded"
-    androidStatusBarBackground="#181818"
-    xmlns:nota="@nota/nativescript-webview-ext"
-  >
+  <Page @loaded="pageLoaded" androidStatusBarBackground="#181818">
     <ActionBar @tap="openMenu">
       <WrapLayout>
         <WrapLayout class="menu-bg">
@@ -22,7 +18,17 @@
           />
         </WrapLayout>
 
+        <ActivityIndicator
+          width="40"
+          height="40"
+          verticalAlignment="center"
+          busy="true"
+          v-if="loading"
+          class="icon"
+        />
+
         <Image
+          v-if="!loading"
           src="res://icon"
           width="40"
           height="40"
@@ -45,20 +51,32 @@
           <StackLayout class="search">
             <Label :text="text.searchText" class="search-text" />
             <TextField v-model="tags" :hint="text.input" />
-            <ListView class="tags-list" for="(tag, ind) in listTags">
-              <v-template>
-                <FlexboxLayout justifyContent="space-between">
-                  <Label
-                    :text="tag.name + ' (' + tag.count + ')'"
-                    class="search-tag"
-                  />
-                  <Switch
-                    :checked="checkTag(tag.name)"
-                    @checkedChange="changeTag(tag.name)"
-                  />
-                </FlexboxLayout>
-              </v-template>
-            </ListView>
+            <ScrollView
+              @scroll="onScrollTags"
+              orientation="vertical"
+              scrollBarIndicatorVisible="true"
+              class="tags-list"
+              ref="tagsScroll"
+            >
+              <FlexboxLayout flexWrap="wrap">
+                <Label
+                  v-for="(tag, ind) in getShowTag()"
+                  :key="ind"
+                  :text="tag.name + ' (' + tag.count + ')'"
+                  class="search-tag"
+                  @tap="changeTag(tag.name)"
+                  :style="{
+                    background:
+                      tags.indexOf(tag.name) > -1 ? '#55ab00' : '#212121',
+                  }"
+                />
+
+                <!-- <Switch
+                  :checked="checkTag(tag.name)"
+                  @checkedChange="changeTag(tag.name)"
+                /> -->
+              </FlexboxLayout>
+            </ScrollView>
             <WrapLayout>
               <Button
                 class="but-tag"
@@ -100,36 +118,50 @@
     </TabView>
 
     <transition name="bounce" appear>
-      <ScrollView
-        @scroll="onScroll"
-        ref="scrollLayout"
+      <PullToRefresh
         v-if="list"
-        orientation="vertical"
-        scrollBarIndicatorVisible="true"
-        id="swipable"
+        @refresh="refreshList"
+        indicatorFillColor="#212121"
+        indicatorColor="#ffffff"
       >
-        <FlexboxLayout
-          flexWrap="wrap"
-          justifyContent="center"
-          backgroundColor="#181818"
+        <ScrollView
+          @scroll="onScroll"
+          ref="scrollLayout"
+          orientation="vertical"
+          scrollBarIndicatorVisible="true"
+          id="swipable"
         >
-          <Image
-            @tap="imageClick(im, ind)"
-            v-for="(im, ind) in img"
-            width="49%"
-            :style="{
-              'border-color': checkHave(im.data.id) ? '#55ab00' : '#181818',
-            }"
-            :key="ind"
-            :src="im.low"
-            class="image"
-            stretch="aspectFill"
-            @longPress="imageMenu(im, ind)"
-          />
-        </FlexboxLayout>
-      </ScrollView>
+          <FlexboxLayout
+            flexWrap="wrap"
+            justifyContent="center"
+            backgroundColor="#181818"
+          >
+            <Image
+              @tap="imageClick(im, ind)"
+              v-for="(im, ind) in img"
+              width="49%"
+              :style="{
+                'border-color': checkHave(im.data.id) ? '#55ab00' : '#181818',
+              }"
+              :key="ind"
+              :src="im.low"
+              class="image"
+              stretch="aspectFill"
+              @longPress="imageMenu(im, ind)"
+            />
+          </FlexboxLayout>
+        </ScrollView>
+      </PullToRefresh>
 
       <GridLayout v-if="show" rows="*,auto" backgroundColor="#181818">
+        <ImageZoom
+          rowSpan="2"
+          :src="nowimg.mid"
+          class="web"
+          maxZoom="10"
+          minZoom="1"
+        />
+
         <ScrollView orientation="vertical" row="1">
           <WrapLayout class="info">
             <Label
@@ -143,46 +175,30 @@
               class="desc"
             />
             <ScrollView orientation="horizontal">
-              <WrapLayout height="70px">
-                <Label :text="text.searchText" class="desc" />
+              <WrapLayout height="95px" class="tags-block">
                 <Label
                   v-for="(tag, img) in nowimg.data.tags.split(' ')"
                   :key="img"
                   :text="tag"
-                  @tap="changeTag(tag)"
                   class="desc-tags"
+                  @tap="changeTag(tag)"
                   :style="{
-                    'color': tags.indexOf(tag) > -1
-                      ? '#55ab00'
-                      : 'white',
+                    background: tags.indexOf(tag) > -1 ? '#55ab00' : '#212121',
                   }"
                 />
               </WrapLayout>
             </ScrollView>
-            <Button class="but" :text="text.back" @tap="back" />
-            <Button
-              top="500"
-              class="but download"
-              :text="text.down"
-              @tap="imageDownload"
-            />
+            <WrapLayout>
+              <Button class="but" :text="text.back" @tap="back" />
+              <Button
+                top="500"
+                class="but download"
+                :text="text.down"
+                @tap="imageDownload"
+              />
+            </WrapLayout>
           </WrapLayout>
         </ScrollView>
-
-        <WebViewExt
-          rowSpan="2"
-          width="100%"
-          height="110%"
-          class="web"
-          builtInZoomControls="true"
-          displayZoomControls="false"
-          supportZoom="true"
-          :src="
-            `<head> <meta name='viewport' content='width=device-width, initial-scale=0.1, maximum-scale=5.0, user-scalable=yes'> <style> * {margin: 0; padding: 0;} html { background: transparent; } img {width: 100vw; height: auto;} </style> </head> <body> <img src=` +
-              nowimg.link +
-              '> </body>'
-          "
-        ></WebViewExt>
       </GridLayout>
     </transition>
   </Page>

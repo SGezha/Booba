@@ -52,7 +52,9 @@ export default {
       tags: "",
       tagsArray: [],
       nsfm: false,
-      hide: false
+      hide: false,
+      loading: true,
+      tagsShow: 50,
     };
   },
   async created() {
@@ -126,8 +128,18 @@ export default {
       });
   },
   methods: {
+    pageLoaded(args) {
+      var page = args.object;
+
+      // let swipe = page.getViewById("swipable");
+      // swipe.on(gestures.GestureTypes.swipe, this.openMenu);
+      if (this.show) return;
+    },
+    getShowTag() {
+      return this.listTags.slice(0, this.tagsShow);
+    },
     changeHide() {
-      if(this.hide) {
+      if (this.hide) {
         this.hide = false;
       } else {
         this.hide = true;
@@ -173,46 +185,12 @@ export default {
         }
       }
       this.tags = this.tagsArray.join(" ");
+      this.img = [];
+      this.Numpage = 1;
+      this.getImages();
     },
-    getTags() {
-      fetch(`https://konachan.net/tag.xml?order=count&limit=500`)
-        .then((response) => {
-          return response.text();
-        })
-        .then((data) => {
-          let parsed = [];
-          data.split("<tag").forEach((i, ind) => {
-            if (ind == 0 || ind == 1) return;
-            let obj = {
-              id: i.split(` id="`)[1].split('"')[0],
-              name: i.split(` name="`)[1].split('"')[0],
-              count: i.split(` count="`)[1].split('"')[0],
-            };
-            this.listTags.push(obj);
-          });
-        });
-      console.log(this.listTags);
-    },
-    imageMenu(element) {
-      this.nowimg = element;
-      action("", "", [this.text.tags, this.text.down]).then((result) => {
-        if (result == this.text.down) {
-          this.imageDownload();
-        }
-      });
-    },
-    cancelBack(data) {
-      data.cancel = true; // prevents default back button behavior
-    },
-    checkHave(id) {
-      if (
-        this.have.find((a) => {
-          if (a.id.split("-konachan").join("") == id) return true;
-        }) != undefined
-      )
-        return true;
-    },
-    getImages() {
+    getImages(dont) {
+      if(!dont) this.loading = true;
       fetch(
         `https://konachan.net/post.xml?page=dapi&s=post&q=index&json=1&limit=50&page=${this.Numpage}&tags=${this.tags}`
       )
@@ -229,10 +207,12 @@ export default {
                 i.split(`rating="`)[1].split('"')[0] == "q")
             )
               return;
-            if(this.hide && this.checkHave(i.split(` id="`)[1].split('"')[0])) return;
+            if (this.hide && this.checkHave(i.split(` id="`)[1].split('"')[0]))
+              return;
             this.img.push({
               link: i.split(`jpeg_url="`)[1].split('"')[0],
               low: i.split(`preview_url="`)[1].split('"')[0],
+              mid: i.split(` sample_url="`)[1].split('"')[0],
               data: {
                 id: i.split(` id="`)[1].split('"')[0],
                 rating: i.split(`rating="`)[1].split('"')[0],
@@ -243,19 +223,64 @@ export default {
               },
             });
           });
-          if(this.img.length < 15) {
+          if (this.img.length < 15) {
             this.Numpage++;
             this.getImages();
           }
           this.loaded = true;
+          this.loading = false;
         });
     },
-    pageLoaded(args) {
-      var page = args.object;
-
-      // let swipe = page.getViewById("swipable");
-      // swipe.on(gestures.GestureTypes.swipe, this.openMenu);
-      if (this.show) return;
+    getTags() {
+      fetch(`https://konachan.net/tag.xml?order=count&limit=300`)
+        .then((response) => {
+          return response.text();
+        })
+        .then((data) => {
+          let parsed = [];
+          data.split("<tag").forEach((i, ind) => {
+            if (ind == 0 || ind == 1) return;
+            let obj = {
+              id: i.split(` id="`)[1].split('"')[0],
+              name: i.split(` name="`)[1].split('"')[0],
+              count: i.split(` count="`)[1].split('"')[0],
+            };
+            parsed.push(obj);
+          });
+          this.listTags = parsed;
+        });
+    },
+    refreshList(args) {
+      let pullRefresh = args.object;
+      this.img = [];
+      this.Numpage = 1;
+      this.getImages(true);
+      setTimeout(function() {
+        pullRefresh.refreshing = false;
+      }, 1000);
+    },
+    imageMenu(element) {
+      this.nowimg = element;
+      action(
+        `${this.text.resolution}: ${element.data.width}x${element.data.height}`,
+        "",
+        [this.text.down]
+      ).then((result) => {
+        if (result == this.text.down) {
+          this.imageDownload();
+        }
+      });
+    },
+    cancelBack(data) {
+      data.cancel = true; // prevents default back button behavior
+    },
+    checkHave(id) {
+      if (
+        this.have.find((a) => {
+          if (a.id.split("-konachan").join("") == id) return true;
+        }) != undefined
+      )
+        return true;
     },
     openMenu(args) {
       if (!this.menu) {
@@ -263,6 +288,7 @@ export default {
         this.show = false;
         this.menu = true;
       } else {
+        this.tagsShow = 50;
         this.list = true;
         this.menu = false;
         setTimeout(() => {
@@ -294,6 +320,12 @@ export default {
       if (this.nowScroll == this.needScroll) {
         this.Numpage++;
         this.getImages();
+      }
+    },
+    onScrollTags(el) {
+      if (!this.menu) return;
+      if (el.scrollY == this.$refs.tagsScroll.nativeView.scrollableHeight) {
+        this.tagsShow += 50;
       }
     },
     imageClick: function(element) {
