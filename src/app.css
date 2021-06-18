@@ -88,6 +88,7 @@ ActionBar {
   overflow: hidden;
   min-width: 100%;
   min-height: 300px;
+  max-height: 400px !important;
 }
 
 .bounce-enter-active {
@@ -150,4 +151,15 @@ TextField {
     transform: scale(1);
     opacity: 1;
   }
+}
+
+.loading-block {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.settings-label {
+  margin-left: 10px;
+  font-size: 20;
+  color: white;
 }

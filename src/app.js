@@ -10,6 +10,7 @@ import { LocalNotifications } from "nativescript-local-notifications";
 import { leftProperty } from "@nativescript/core/ui/layouts/absolute-layout";
 let gestures = require("ui/gestures");
 const permissions = require("nativescript-permissions");
+const appSettings = require("tns-core-modules/application-settings");
 
 export default {
   data() {
@@ -31,6 +32,8 @@ export default {
         hide: "Hide existing images",
         add: "added",
         remove: "removed",
+        loadingPage: "Loading page #",
+        select: "Select",
         complete: {
           downloaded: "Downloaded!",
           path: "File path",
@@ -38,7 +41,7 @@ export default {
         error: "Error!",
       },
       img: [],
-      Numpage: 1,
+      numPage: 1,
       show: false,
       nowimg: {},
       scrollOffset: 0,
@@ -53,11 +56,15 @@ export default {
       tagsArray: [],
       nsfm: false,
       hide: false,
-      loading: true,
       tagsShow: 50,
+      booru: "konachan",
     };
   },
   async created() {
+    this.nsfm = appSettings.getString("nsfm") == "true" ? true : false;
+    this.hide = appSettings.getString("hide") == "true" ? true : false;
+    this.booru = appSettings.getString("booru");
+
     this.getImages();
     this.getTags();
     require("tns-core-modules/application").android.on(
@@ -93,6 +100,8 @@ export default {
         hide: "Скрыть скачанные изображения",
         add: "добавлен",
         remove: "убран",
+        loadingPage: "Загрузка страницы #",
+        select: "Выбрать",
         complete: {
           downloaded: "Скачано!",
           path: "Путь к файлу",
@@ -138,15 +147,24 @@ export default {
     getShowTag() {
       return this.listTags.slice(0, this.tagsShow);
     },
+    reset() {
+      this.numPage = 1;
+      this.img = [];
+      this.getImages();
+    },
     changeHide() {
       if (this.hide) {
         this.hide = false;
       } else {
         this.hide = true;
       }
-      this.Numpage = 1;
-      this.img = [];
-      this.getImages();
+      appSettings.setString("hide", this.hide.toString());
+      this.reset();
+    },
+    changeBooru(name) {
+      this.booru = name;
+      appSettings.setString("booru", this.booru.toString());
+      this.reset();
     },
     changeNSFM() {
       if (this.nsfm) {
@@ -154,16 +172,13 @@ export default {
       } else {
         this.nsfm = true;
       }
-      this.Numpage = 1;
-      this.img = [];
-      this.getImages();
+      appSettings.setString("nsfm", this.nsfm.toString());
+      this.reset();
     },
     search() {
       this.list = true;
       this.menu = false;
-      this.img = [];
-      this.Numpage = 1;
-      this.getImages();
+      this.reset();
       this.tagsArray = this.tags.split(" ");
     },
     checkTag(name) {
@@ -185,51 +200,127 @@ export default {
         }
       }
       this.tags = this.tagsArray.join(" ");
-      this.img = [];
-      this.Numpage = 1;
-      this.getImages();
+      this.reset();
     },
-    getImages(dont) {
-      if(!dont) this.loading = true;
-      fetch(
-        `https://konachan.net/post.xml?page=dapi&s=post&q=index&json=1&limit=50&page=${this.Numpage}&tags=${this.tags}`
-      )
-        .then((response) => {
-          return response.text();
-        })
-        .then((data) => {
-          let parsed = [];
-          data.split("<post ").forEach((i, ind) => {
-            if (ind == 0) return;
-            if (
-              !this.nsfm &&
-              (i.split(`rating="`)[1].split('"')[0] == "e" ||
-                i.split(`rating="`)[1].split('"')[0] == "q")
-            )
-              return;
-            if (this.hide && this.checkHave(i.split(` id="`)[1].split('"')[0]))
-              return;
-            this.img.push({
-              link: i.split(`jpeg_url="`)[1].split('"')[0],
-              low: i.split(`preview_url="`)[1].split('"')[0],
-              mid: i.split(` sample_url="`)[1].split('"')[0],
-              data: {
-                id: i.split(` id="`)[1].split('"')[0],
-                rating: i.split(`rating="`)[1].split('"')[0],
-                owner: i.split(`author="`)[1].split('"')[0],
-                width: i.split(` width="`)[1].split('"')[0],
-                height: i.split(` height="`)[1].split('"')[0],
-                tags: i.split(` tags="`)[1].split('"')[0],
-              },
+    getImages() {
+      if (this.booru == "konachan") {
+        fetch(
+          `https://konachan.net/post.xml?page=dapi&s=post&q=index&json=1&limit=50&page=${this.numPage}&tags=${this.tags}`
+        )
+          .then((response) => {
+            return response.text();
+          })
+          .then((data) => {
+            data.split("<post ").forEach((i, ind) => {
+              if (ind == 0) return;
+              if (
+                !this.nsfm &&
+                (i.split(`rating="`)[1].split('"')[0] == "e" ||
+                  i.split(`rating="`)[1].split('"')[0] == "q")
+              )
+                return;
+              if (
+                this.hide &&
+                this.checkHave(i.split(` id="`)[1].split('"')[0])
+              )
+                return;
+              let obj = {
+                link: i.split(`jpeg_url="`)[1].split('"')[0],
+                low: i.split(`preview_url="`)[1].split('"')[0],
+                mid: i.split(` sample_url="`)[1].split('"')[0],
+                data: {
+                  id: i.split(` id="`)[1].split('"')[0],
+                  rating: i.split(`rating="`)[1].split('"')[0],
+                  owner: i.split(`author="`)[1].split('"')[0],
+                  width: i.split(` width="`)[1].split('"')[0],
+                  height: i.split(` height="`)[1].split('"')[0],
+                  tags: i.split(` tags="`)[1].split('"')[0],
+                },
+              };
+              this.img.push(obj);
             });
+            if (this.img.length < 15) {
+              this.numPage++;
+              this.getImages();
+            }
+            this.loaded = true;
+          })
+          .catch((er) => {
+            console.log(er);
           });
-          if (this.img.length < 15) {
-            this.Numpage++;
-            this.getImages();
-          }
-          this.loaded = true;
-          this.loading = false;
-        });
+      } else {
+        fetch(
+          `https://gelbooru.com/index.php?page=dapi&s=post&q=index&limit=50&pid=${this.numPage}&tags=${this.tags}`
+        )
+          .then((response) => {
+            return response.text();
+          })
+          .then((data) => {
+            data.split("<post ").forEach((i, ind) => {
+              if (ind == 0) return;
+              if (
+                !this.nsfm &&
+                (i.split(`rating="`)[1].split('"')[0] == "e" ||
+                  i.split(`rating="`)[1].split('"')[0] == "q")
+              )
+                return;
+              if (
+                this.hide &&
+                this.checkHave(i.split(` id="`)[1].split('"')[0])
+              )
+                return;
+              let obj = {
+                link:
+                  i.indexOf(`file_url="`) > -1
+                    ? i.split(`file_url="`)[1].split('"')[0]
+                    : ``,
+                low:
+                  i.indexOf(` preview_url="`) > -1
+                    ? i.split(` preview_url="`)[1].split('"')[0]
+                    : ``,
+                mid:
+                  i.indexOf(` sample_url="`) > -1
+                    ? i.split(` sample_url="`)[1].split('"')[0]
+                    : ``,
+                data: {
+                  id:
+                    i.indexOf(` id="`) > -1
+                      ? i.split(` id="`)[1].split('"')[0]
+                      : ``,
+                  rating:
+                    i.indexOf(` rating="`) > -1
+                      ? i.split(` rating="`)[1].split('"')[0]
+                      : ``,
+                  owner:
+                    i.indexOf(` source="`) > -1
+                      ? i.split(` source="`)[1].split('"')[0]
+                      : ``,
+                  width:
+                    i.indexOf(` width="`) > -1
+                      ? i.split(` width="`)[1].split('"')[0]
+                      : ``,
+                  height:
+                    i.indexOf(`height="`) > -1
+                      ? i.split(`height="`)[1].split('"')[0]
+                      : ``,
+                  tags:
+                    i.indexOf(` tags="`) > -1
+                      ? i.split(` tags="`)[1].split('"')[0]
+                      : ``,
+                },
+              };
+              this.img.push(obj);
+            });
+            if (this.img.length < 15) {
+              this.numPage++;
+              this.getImages();
+            }
+            this.loaded = true;
+          })
+          .catch((er) => {
+            console.log(er);
+          });
+      }
     },
     getTags() {
       fetch(`https://konachan.net/tag.xml?order=count&limit=300`)
@@ -252,12 +343,8 @@ export default {
     },
     refreshList(args) {
       let pullRefresh = args.object;
-      this.img = [];
-      this.Numpage = 1;
-      this.getImages(true);
-      setTimeout(function() {
-        pullRefresh.refreshing = false;
-      }, 1000);
+      pullRefresh.refreshing = false;
+      this.reset();
     },
     imageMenu(element) {
       this.nowimg = element;
@@ -277,7 +364,7 @@ export default {
     checkHave(id) {
       if (
         this.have.find((a) => {
-          if (a.id.split("-konachan").join("") == id) return true;
+          if (a.id == id) return true;
         }) != undefined
       )
         return true;
@@ -299,10 +386,6 @@ export default {
         }, 50);
       }
     },
-    next() {
-      this.Numpage++;
-      this.getImages();
-    },
     back() {
       this.show = false;
       this.list = true;
@@ -318,7 +401,7 @@ export default {
       this.nowScroll = el.scrollY;
       this.needScroll = this.$refs.scrollLayout.nativeView.scrollableHeight;
       if (this.nowScroll == this.needScroll) {
-        this.Numpage++;
+        this.numPage++;
         this.getImages();
       }
     },
@@ -369,12 +452,11 @@ export default {
           "I need these permissions because I'm cool"
         )
         .then(() => {
-          console.log(el.link);
           let downloadedFilePath = fileSystem.path.join(
             android.os.Environment.getExternalStoragePublicDirectory(
               android.os.Environment.DIRECTORY_DOWNLOADS
             ).getAbsolutePath(),
-            `Booba/${el.data.id}-konachan.jpg`
+            `Booba/${el.data.id}.${el.link.indexOf("png") > -1 ? "png" : "jpg"}`
           );
           getFile(el.link, downloadedFilePath).then(
             (resultFile) => {

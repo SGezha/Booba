@@ -18,17 +18,7 @@
           />
         </WrapLayout>
 
-        <ActivityIndicator
-          width="40"
-          height="40"
-          verticalAlignment="center"
-          busy="true"
-          v-if="loading"
-          class="icon"
-        />
-
         <Image
-          v-if="!loading"
           src="res://icon"
           width="40"
           height="40"
@@ -70,11 +60,6 @@
                       tags.indexOf(tag.name) > -1 ? '#55ab00' : '#212121',
                   }"
                 />
-
-                <!-- <Switch
-                  :checked="checkTag(tag.name)"
-                  @checkedChange="changeTag(tag.name)"
-                /> -->
               </FlexboxLayout>
             </ScrollView>
             <WrapLayout>
@@ -101,6 +86,31 @@
       <TabViewItem :title="text.settings">
         <transition name="bounce" appear>
           <StackLayout class="search">
+            <WrapLayout>
+              <Label
+                :text="`${text.select} Imageboard:`"
+                class="settings-label"
+                verticalAlignment="center"
+              />
+              <Button
+                width="50%"
+                :style="{
+                  background: booru == `konachan` ? '#55ab00' : 'white',
+                  color: booru == `konachan` ? 'white' : '#181818',
+                }"
+                text="Konachan.net"
+                @tap="changeBooru(`konachan`)"
+              />
+              <Button
+                width="50%"
+                :style="{
+                  background: booru != `konachan` ? '#55ab00' : 'white',
+                  color: booru != `konachan` ? 'white' : '#181818',
+                }"
+                text="Gelbooru.com"
+                @tap="changeBooru(`gelbooru`)"
+              />
+            </WrapLayout>
             <FlexboxLayout justifyContent="space-between">
               <Button
                 width="100%"
@@ -149,6 +159,30 @@
               stretch="aspectFill"
               @longPress="imageMenu(im, ind)"
             />
+
+            <FlexboxLayout
+              width="100%"
+              flexWrap="wrap"
+              justifyContent="center"
+              class="loading-block"
+            >
+              <WrapLayout>
+                <ActivityIndicator
+                  width="40"
+                  height="40"
+                  verticalAlignment="center"
+                  busy="true"
+                  class="icon"
+                />
+
+                <Label
+                  :text="`${text.loadingPage}${numPage}`"
+                  fontSize="18"
+                  color="white"
+                  verticalAlignment="center"
+                />
+              </WrapLayout>
+            </FlexboxLayout>
           </FlexboxLayout>
         </ScrollView>
       </PullToRefresh>
@@ -177,7 +211,11 @@
             <ScrollView orientation="horizontal">
               <WrapLayout height="95px" class="tags-block">
                 <Label
-                  v-for="(tag, img) in nowimg.data.tags.split(' ')"
+                  v-for="(tag, img) in nowimg.data.tags
+                    .split(' ')
+                    .filter(function(el) {
+                      return el != '';
+                    })"
                   :key="img"
                   :text="tag"
                   class="desc-tags"
