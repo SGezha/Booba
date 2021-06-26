@@ -40,7 +40,7 @@
         <transition name="bounce" appear>
           <StackLayout class="search">
             <Label :text="text.searchText" class="search-text" />
-            <TextField v-model="tags" :hint="text.input" />
+            <TextField v-model="tags" :hint="text.input" class="input-tag" />
             <ScrollView
               @scroll="onScrollTags"
               orientation="vertical"
@@ -111,6 +111,47 @@
                 @tap="changeBooru(`gelbooru`)"
               />
             </WrapLayout>
+            <WrapLayout>
+              <Label :text="text.quality" class="settings-label" />
+              <Button
+                width="50%"
+                :style="{
+                  background: !high_quality ? '#55ab00' : 'white',
+                  color: !high_quality ? 'white' : '#181818',
+                }"
+                text="Preview"
+                @tap="changeQuality(false)"
+              />
+              <Button
+                width="50%"
+                :style="{
+                  background: high_quality ? '#55ab00' : 'white',
+                  color: high_quality ? 'white' : '#181818',
+                }"
+                text="Sample"
+                @tap="changeQuality(true)"
+              />
+            </WrapLayout>
+            <WrapLayout>
+              <Label :text="text.page" class="settings-label" />
+              <TextField
+                width="100%"
+                v-model="numPage"
+                :text="numPage"
+                keyboardType="number"
+                @textChange="selectPage"
+                class="page"
+              />
+            </WrapLayout>
+            <FlexboxLayout justifyContent="space-between">
+              <Button
+                width="100%"
+                background="white"
+                :text="text.clear"
+                @tap="clearHistory"
+              />
+            </FlexboxLayout>
+
             <FlexboxLayout justifyContent="space-between">
               <Button
                 width="100%"
@@ -151,10 +192,10 @@
               v-for="(im, ind) in img"
               width="49%"
               :style="{
-                'border-color': checkHave(im.data.id) ? '#55ab00' : '#181818',
+                'border-color': checkHave(im.data.id),
               }"
               :key="ind"
-              :src="im.low"
+              :src="getImage(im)"
               class="image"
               stretch="aspectFill"
               @longPress="imageMenu(im, ind)"

@@ -34,6 +34,10 @@ export default {
         remove: "removed",
         loadingPage: "Loading page #",
         select: "Select",
+        page: "Select page:",
+        clear: "Delete history",
+        clear_comp: "History deleted!",
+        quality: "Preview quality:",
         complete: {
           downloaded: "Downloaded!",
           path: "File path",
@@ -57,12 +61,19 @@ export default {
       nsfm: false,
       hide: false,
       tagsShow: 50,
+      see: [],
+      high_quality: false,
       booru: "konachan",
     };
   },
   async created() {
     this.nsfm = appSettings.getString("nsfm") == "true" ? true : false;
     this.hide = appSettings.getString("hide") == "true" ? true : false;
+    this.high_quality = appSettings.getString("high") == "true" ? true : false;
+    if (appSettings.getString("see")) {
+      if (JSON.parse(appSettings.getString("see")).length > 0)
+        this.see = JSON.parse(appSettings.getString("see"));
+    }
     this.booru = appSettings.getString("booru");
 
     this.getImages();
@@ -102,6 +113,10 @@ export default {
         remove: "убран",
         loadingPage: "Загрузка страницы #",
         select: "Выбрать",
+        page: "Выбрать страницу:",
+        clear: "Удалить историю",
+        clear_comp: "История удалена!",
+        quality: "Качество предпросмотра:",
         complete: {
           downloaded: "Скачано!",
           path: "Путь к файлу",
@@ -203,6 +218,18 @@ export default {
       this.reset();
     },
     getImages() {
+      if (this.img.length > 0) {
+        this.img.forEach((e) => {
+          if (
+            this.see.find((a) => {
+              if (a == e.data.id) return true;
+            }) == undefined
+          )
+            this.see.push(e.data.id);
+        });
+        appSettings.setString("see", JSON.stringify(this.see));
+      }
+
       if (this.booru == "konachan") {
         fetch(
           `https://konachan.net/post.xml?page=dapi&s=post&q=index&json=1&limit=50&page=${this.numPage}&tags=${this.tags}`
@@ -341,6 +368,10 @@ export default {
           this.listTags = parsed;
         });
     },
+    selectPage() {
+      this.img = [];
+      this.getImages();
+    },
     refreshList(args) {
       let pullRefresh = args.object;
       pullRefresh.refreshing = false;
@@ -362,12 +393,37 @@ export default {
       data.cancel = true; // prevents default back button behavior
     },
     checkHave(id) {
+      let result = "#181818";
+      if (
+        this.see.find((a) => {
+          if (a == id) return true;
+        }) != undefined
+      )
+        result = "#ffd500";
       if (
         this.have.find((a) => {
           if (a.id == id) return true;
         }) != undefined
       )
-        return true;
+        result = "#55ab00";
+      return result;
+    },
+    clearHistory() {
+      this.see = [];
+      appSettings.setString("see", JSON.stringify(this.see));
+      let toastHave = Toast.makeText(this.text.clear_comp);
+      toastHave.show();
+    },
+    changeQuality(data) {
+      this.high_quality = data;
+      appSettings.setString("high", this.high_quality.toString());
+    },
+    getImage(im) {
+      if(this.high_quality) {
+        return im.mid;
+      } else {
+        return im.low;
+      }
     },
     openMenu(args) {
       if (!this.menu) {
@@ -386,7 +442,7 @@ export default {
         }, 50);
       }
     },
-    back() {
+    back(data) {
       this.show = false;
       this.list = true;
       setTimeout(() => {
