@@ -474,7 +474,7 @@ export default {
     },
     imageDownload: function() {
       let el = this.nowimg;
-      if (this.checkHave(el.data.id)) {
+      if (this.checkHave(el.data.id) == "#55ab00") {
         let toastHave = Toast.makeText(this.text.have);
         toastHave.show();
         return;
