@@ -113,24 +113,26 @@
             </WrapLayout>
             <WrapLayout>
               <Label :text="text.quality" class="settings-label" />
-              <Button
-                width="50%"
-                :style="{
-                  background: !high_quality ? '#55ab00' : 'white',
-                  color: !high_quality ? 'white' : '#181818',
-                }"
-                text="Preview"
-                @tap="changeQuality(false)"
-              />
-              <Button
-                width="50%"
-                :style="{
-                  background: high_quality ? '#55ab00' : 'white',
-                  color: high_quality ? 'white' : '#181818',
-                }"
-                text="Sample"
-                @tap="changeQuality(true)"
-              />
+              <WrapLayout>
+                <Button
+                  width="50%"
+                  :style="{
+                    background: !high_quality ? '#55ab00' : 'white',
+                    color: !high_quality ? 'white' : '#181818',
+                  }"
+                  text="Preview"
+                  @tap="changeQuality(false)"
+                />
+                <Button
+                  width="50%"
+                  :style="{
+                    background: high_quality ? '#55ab00' : 'white',
+                    color: high_quality ? 'white' : '#181818',
+                  }"
+                  text="Sample"
+                  @tap="changeQuality(true)"
+                />
+              </WrapLayout>
             </WrapLayout>
             <WrapLayout>
               <Label :text="text.page" class="settings-label" />
@@ -244,9 +246,7 @@
               class="desc"
             />
             <Label
-              :text="
-                `${text.resolution}: ${nowimg.data.width}x${nowimg.data.height}`
-              "
+              :text="`${text.resolution}: ${nowimg.data.width}x${nowimg.data.height}`"
               class="desc"
             />
             <ScrollView orientation="horizontal">
@@ -254,7 +254,7 @@
                 <Label
                   v-for="(tag, img) in nowimg.data.tags
                     .split(' ')
-                    .filter(function(el) {
+                    .filter(function (el) {
                       return el != '';
                     })"
                   :key="img"
