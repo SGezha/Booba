@@ -218,6 +218,7 @@ export default {
       this.reset();
     },
     getImages() {
+      let fix = true;
       if (this.img.length > 0) {
         this.img.forEach((e) => {
           if (
@@ -228,6 +229,11 @@ export default {
             this.see.push(e.data.id);
         });
         appSettings.setString("see", JSON.stringify(this.see));
+      }
+
+      if(this.img.length > 100) {
+        this.img = [];
+        fix = false;
       }
 
       if (this.booru == "konachan") {
@@ -266,7 +272,7 @@ export default {
               };
               this.img.push(obj);
             });
-            if (this.img.length < 15) {
+            if (this.img.length < 15 && fix) {
               this.numPage++;
               this.getImages();
             }
